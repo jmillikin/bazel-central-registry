@@ -22,7 +22,17 @@ TARGETS_LIST = [
     struct(
         target = "AARCH64",
         targetdir = "aarch64",
-        srcs = ["ffi.c", "sysv.S"],
+        srcs = ["ffi.c", "sysv.S", "internal.h"],
+        substitutions = {
+            "EH_FRAME_FLAGS": '"a"',
+            "HAVE_RO_EH_FRAME": "1",
+
+            # FIXME: should just be for macOS
+            "FFI_EXEC_TRAMPOLINE_TABLE": "1",
+
+            # FIXME: also macOS-specific?
+            "SYMBOL_UNDERSCORE": "1",
+        },
     ),
     struct(
         target = "ARM_WIN64",
@@ -125,7 +135,6 @@ expand_ffi_h(
     out = "include/ffi.h",
     version = module_version(),
     substitutions = select_target_attr(TARGETS, "substitutions"),
-
 )
 
 expand_fficonfig_h(

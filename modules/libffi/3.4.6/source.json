@@ -3,9 +3,9 @@
     "integrity": "sha256-sN6p3yPIY6elDoJUQPPr/6vWXfFJcQjl1Dd0eEOJWk4=",
     "strip_prefix": "libffi-3.4.6",
     "overlay": {
-        "BUILD.bazel": "sha256-/6vIsi+H3nI09lwSutwemjmVRuKLLA4UpeJvbDFfkSM=",
+        "BUILD.bazel": "sha256-6Yr71XUITNk0kYvrseoaoKuSRdGl4hxwQMl//X64rnU=",
         "MODULE.bazel": "sha256-XISuYops5sWXZsW+KMNXtDjHi8gKt6/cJsMxBLSFAjA=",
-        "build.bzl": "sha256-YeiLImU4P2WAoaKkmjecNs/s6Q8pn7v8PoV3QEwyjD4=",
+        "build.bzl": "sha256-dQ6pq9Nc4rrd50ZqxAqA7U5VcdqvEByZYCa1ffJ5UJk=",
         "src/aarch64/BUILD.bazel": "sha256-u0uXUwt/39klJske46RcqKcElz8i00W3ToGMZiQlAT0=",
         "src/x86/BUILD.bazel": "sha256-h5uHQWvT7dqEm7tSykRdwLwgIJhDEJnOZO+QvQS+BPQ="
     }

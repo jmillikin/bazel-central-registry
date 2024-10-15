@@ -1,6 +1,6 @@
 _FFI_H_DEFAULTS = {
-    "@FFI_EXEC_TRAMPOLINE_TABLE@": "0",
-    "@HAVE_LONG_DOUBLE@": "0",
+    "FFI_EXEC_TRAMPOLINE_TABLE": "0",
+    "HAVE_LONG_DOUBLE": "0",
 }
 
 _FFICONFIG_H_DEFAULTS = {
@@ -9,8 +9,6 @@ _FFICONFIG_H_DEFAULTS = {
     "HAVE_INTTYPES_H": "1",
     "HAVE_STDINT_H": "1",
     "STDC_HEADERS": "1",
-
-    "FFI_MMAP_EXEC_WRIT": "1",
 }
 
 _FFICONFIG_H_CC_DEFAULTS = {
@@ -28,10 +26,15 @@ _FFICONFIG_H_OS_DEFAULTS = {
     "linux": {
         "HAVE_MEMFD_CREATE": "1",
     },
+    "macos": {
+        "FFI_EXEC_TRAMPOLINE_TABLE": "1",
+    },
 }
 
 def _expand_ffi_h(ctx):
-    substitutions = dict(_FFI_H_DEFAULTS)
+    substitutions = {}
+    for key, value in _FFI_H_DEFAULTS.items():
+        substitutions["@%s@" % (key,)] = value
     substitutions["@VERSION@"] = ctx.attr.version
     for key, value in ctx.attr.substitutions.items():
         substitutions["@%s@" % (key,)] = value
@@ -137,7 +140,7 @@ def selected(target, attr_name):
 def select_target_attr(targets, attr_name):
     return select({
         #"@platforms//cpu:arm64": selected(targets["AARCH64"], attr_name),
-        #"@platforms//cpu:aarch64": selected(targets["AARCH64"], attr_name),
+        "@platforms//cpu:aarch64": selected(targets["AARCH64"], attr_name),
         #"@platforms//cpu:i386": selected(targets["X86"], attr_name),
         #"@platforms//cpu:x86_32": selected(targets["X86"], attr_name),
         "@platforms//cpu:x86_64": selected(targets["X86_64"], attr_name),
@@ -153,6 +156,7 @@ def select_cc_compiler():
 def select_os():
     return select({
         "@platforms//os:linux": "linux",
+        "@platforms//os:macos": "macos",
         "//conditions:default": "",
     })
 
