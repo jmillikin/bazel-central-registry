@@ -1,0 +1,11 @@
+exports_files(
+    srcs = glob(["*.c", "*.h", "*.S"]),
+    visibility = ["//:__subpackages__"],
+)
+
+cc_library(
+    name = "target_h",
+    hdrs = ["ffitarget.h"],
+    strip_include_prefix = "/src/x86",
+    visibility = ["//:__subpackages__"],
+)

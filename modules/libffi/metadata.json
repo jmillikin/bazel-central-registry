@@ -1,0 +1,17 @@
+{
+    "homepage": "https://sourceware.org/libffi/",
+    "maintainers": [
+        {
+            "email": "john@john-millikin.com",
+            "github": "jmillikin",
+            "name": "John Millikin"
+        }
+    ],
+    "repository": [
+        "github:libffi/libffi"
+    ],
+    "versions": [
+        "3.4.6"
+    ],
+    "yanked_versions": {}
+}

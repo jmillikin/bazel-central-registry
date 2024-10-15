@@ -1,0 +1,167 @@
+load(
+    ":build.bzl",
+    "expand_ffi_h",
+    "expand_fficonfig_h",
+    "select_cc_compiler",
+    "select_os",
+    "select_target_attr",
+    struct = "struct_",
+)
+
+SRCS = [
+    "src/prep_cif.c",
+    "src/types.c",
+    "src/raw_api.c",
+    "src/java_raw_api.c",
+    "src/closures.c",
+    "src/tramp.c",
+]
+
+# From `configure.host` (and a bit of `configure.ac`)
+TARGETS_LIST = [
+    struct(
+        target = "AARCH64",
+        targetdir = "aarch64",
+        srcs = ["ffi.c", "sysv.S"],
+    ),
+    struct(
+        target = "ARM_WIN64",
+        targetdir = "aarch64",
+        srcs = ["ffi.c", "sysv.S"],
+        srcs_msvc = ["ffi.c", "win64_armasm.S"],
+    ),
+    struct(
+        target = "ARM_WIN32",
+        targetdir = "arm",
+        srcs = ["ffi.c", "sysv.S"],
+        srcs_msvc = ["ffi.c", "sysv_msvc_arm32.S"],
+    ),
+    struct(
+        target = "ARM",
+        targetdir = "arm",
+        srcs = ["ffi.c", "sysv.S"],
+    ),
+    struct(
+        target = "RISCV",
+        targetdir = "riscv",
+        srcs = ["ffi.c", "sysv.S"],
+    ),
+    struct(
+        target = "wasm32",
+        targetdir = "wasm32",
+        srcs = ["ffi.c"],
+    ),
+    struct(
+        target = "X86",
+        targetdir = "x86",
+        srcs = ["ffi.c", "sysv.S", "internal.h"],
+        srcs_msvc = ["ffi.c", "sysv_intel.S", "internal.h"],
+    ),
+    struct(
+        target = "X86_64",
+        targetdir = "x86",
+        srcs = ["ffi64.c", "ffiw64.c", "unix64.S", "win64.S", "internal.h", "internal64.h", "asmnames.h"],
+        srcs_x32 = ["ffi64.c", "unix64.S", "internal.h", "internal64.h", "asmnames.h"],
+        substitutions = {
+            "EH_FRAME_FLAGS": '"a"',
+            "FFI_EXEC_STATIC_TRAMP": "1",
+            "HAVE_AS_X86_64_UNWIND_SECTION_TYPE": "1",
+            "HAVE_AS_X86_PCREL": "1",
+            "HAVE_RO_EH_FRAME": "1",
+        },
+    ),
+    struct(
+        target = "X86_DARWIN",
+        targetdir = "x86",
+        srcs = ["ffi.c", "sysv.S"],
+    ),
+    struct(
+        target = "X86_FREEBSD",
+        targetdir = "x86",
+        srcs = ["ffi.c", "sysv.S"],
+    ),
+    struct(
+        target = "X86_WIN32",
+        targetdir = "x86",
+        srcs = ["ffi.c", "sysv.S"],
+        srcs_msvc = ["ffi.c", "sysv_intel.S"],
+    ),
+    struct(
+        target = "X86_WIN64",
+        targetdir = "x86",
+        srcs = ["ffiw64.c", "win64.S"],
+        srcs_msvc = ["ffiw64.c", "win64_intel.S"],
+    ),
+]
+
+TARGETS = dict([(t.target, t) for t in TARGETS_LIST])
+
+cc_library(
+    name = "ffi",
+    srcs = SRCS + select_target_attr(TARGETS, "srcs"),
+    textual_hdrs = ["src/dlmalloc.c"],
+    deps = [
+        "//:fficonfig",
+        "//:headers",
+        ":ffitarget_h",
+    ],
+    # Disable Bazel's default behavior of linking to `libstdc++` / `libc++`.
+    features = ["-default_link_libs"],
+    copts = [
+        # libffi uses its own deprecated functions internally.
+        "-Wno-deprecated-declarations",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "ffitarget_h",
+    actual = select_target_attr(TARGETS, "target_h"),
+)
+
+expand_ffi_h(
+    name = "ffi_h",
+    template = "include/ffi.h.in",
+    out = "include/ffi.h",
+    version = module_version(),
+    substitutions = select_target_attr(TARGETS, "substitutions"),
+
+)
+
+expand_fficonfig_h(
+    name = "fficonfig_h",
+    template = "fficonfig.h.in",
+    out = "fficonfig/fficonfig.h",
+    version = module_version(),
+    substitutions = select_target_attr(TARGETS, "substitutions"),
+    cc_compiler = select_cc_compiler(),
+    os = select_os(),
+)
+
+cc_library(
+    name = "fficonfig",
+    hdrs = [":fficonfig_h"],
+    strip_include_prefix = "/fficonfig",
+)
+
+cc_library(
+    name = "headers",
+    hdrs = [
+        "include/ffi_cfi.h",
+        "include/ffi_common.h",
+        "include/tramp.h",
+        ":ffi_h",
+    ],
+    #deps = [":fficonfig_h_lib"],
+    strip_include_prefix = "/include",
+)
+
+config_setting(
+    name = "cc_compiler_clang",
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang"},
+)
+
+config_setting(
+    name = "cc_compiler_gcc",
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "gcc"},
+)

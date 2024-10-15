@@ -1,0 +1,12 @@
+{
+    "url": "https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz",
+    "integrity": "sha256-sN6p3yPIY6elDoJUQPPr/6vWXfFJcQjl1Dd0eEOJWk4=",
+    "strip_prefix": "libffi-3.4.6",
+    "overlay": {
+        "BUILD.bazel": "sha256-/6vIsi+H3nI09lwSutwemjmVRuKLLA4UpeJvbDFfkSM=",
+        "MODULE.bazel": "sha256-XISuYops5sWXZsW+KMNXtDjHi8gKt6/cJsMxBLSFAjA=",
+        "build.bzl": "sha256-YeiLImU4P2WAoaKkmjecNs/s6Q8pn7v8PoV3QEwyjD4=",
+        "src/aarch64/BUILD.bazel": "sha256-u0uXUwt/39klJske46RcqKcElz8i00W3ToGMZiQlAT0=",
+        "src/x86/BUILD.bazel": "sha256-h5uHQWvT7dqEm7tSykRdwLwgIJhDEJnOZO+QvQS+BPQ="
+    }
+}
