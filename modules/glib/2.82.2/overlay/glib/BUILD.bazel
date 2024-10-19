@@ -1,0 +1,194 @@
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+
+PUBLIC_HDRS = [
+    "glib.h",
+    "gi18n.h",
+    "gi18n-lib.h",
+    "gprintf.h",
+    "gstdio.h",
+]
+
+INTERNAL_HDRS = glob(
+    [
+        "*.h",
+        "deprecated/*.h",
+    ],
+    exclude = PUBLIC_HDRS,
+) + [
+    ":glibconfig_h",
+    ":gversionmacros_h",
+    ":glib-visibility_h",
+]
+
+[expand_template(
+    name = "cp_internal_hdr_%d" % (ii,),
+    out = "include/glib/" + hdr.strip(":").replace("_h", ".h"),
+    substitutions = {},
+    template = hdr,
+) for (ii, hdr) in enumerate(INTERNAL_HDRS)]
+
+[
+    V_MAJOR,
+    V_MINOR,
+    V_MICRO,
+] = module_version().split(".", 3)
+
+expand_template(
+    name = "glibconfig_h",
+    out = "glibconfig.h",
+    substitutions = {
+        "@GLIB_MAJOR_VERSION@": V_MAJOR,
+        "@GLIB_MINOR_VERSION@": V_MINOR,
+        "@GLIB_MICRO_VERSION@": V_MICRO,
+    },
+    template = select({
+        "@platforms//os:windows": "glibconfig.h.in-windows",  # TODO
+        "//conditions:default": "glibconfig.h.in-posix",
+    }),
+)
+
+run_binary(
+    name = "gversionmacros_h",
+    srcs = ["gversionmacros.h.in"],
+    outs = ["gversionmacros.h"],
+    args = [
+        module_version(),
+        "versions-macros",
+        "$(location gversionmacros.h.in)",
+        "$(location gversionmacros.h)",
+    ],
+    tool = "//tools:gen-visibility-macros",
+)
+
+run_binary(
+    name = "glib-visibility_h",
+    outs = ["glib-visibility.h"],
+    args = [
+        module_version(),
+        "visibility-macros",
+        "GLIB",
+        "$(location glib-visibility.h)",
+    ],
+    tool = "//tools:gen-visibility-macros",
+)
+
+cc_library(
+    name = "glibconfig_lib",
+    hdrs = [":glibconfig.h"],
+    strip_include_prefix = "/glib",
+)
+
+cc_library(
+    name = "internal_hdrs_isystem",
+    hdrs = [
+        ":cp_internal_hdr_%d" % (ii,)
+        for (ii, _hdr) in enumerate(INTERNAL_HDRS)
+    ],
+    includes = ["include"],
+    strip_include_prefix = "/glib",
+    deps = [":glibconfig_lib"],
+)
+
+cc_library(
+    name = "glib_hdrs_iquote",
+    hdrs = INTERNAL_HDRS + PUBLIC_HDRS,
+    strip_include_prefix = "/glib",
+    visibility = ["//glib/tests:__pkg__"],
+    deps = [":glibconfig_lib"],
+)
+
+GLIB_POSIX_SRCS = [
+    "gspawn-posix.c",
+    "glib-unix.c",
+    "giounix.c",
+]
+
+GLIB_MACOS_SRCS = [
+    "gosxutils.m",
+]
+
+GLIB_WIN32_SRCS = [
+    "giowin32.c",
+    "gwin32.c",
+    "gspawn-win32-helper.c",
+]
+
+GLIB_INTERNAL_TEXTUAL_HDRS = [
+    "gspawn-win32.c",
+    "gstdio-private.c",
+    "gthread-posix.c",
+    "gthread-win32.c",
+    "gwin32-private.c",
+    "win_iconv.c",
+]
+
+GLIB_SRCS = glob(
+    [
+        "*.c",
+        "deprecated/*.c",
+        "libcharset/*.c",
+        "libcharset/*.h",
+    ],
+    exclude = (
+        GLIB_POSIX_SRCS +
+        GLIB_MACOS_SRCS +
+        GLIB_WIN32_SRCS +
+        GLIB_INTERNAL_TEXTUAL_HDRS
+    ) + [
+        # bazel_dep(name = "pcre2", version = "10.43") doesn't have JIT support
+        "gregex.c",
+    ],
+)
+
+cc_library(
+    name = "glib_internal_textual_hdrs",
+    textual_hdrs = GLIB_INTERNAL_TEXTUAL_HDRS,
+)
+
+[expand_template(
+    name = "cp_public_hdr_%d" % (ii,),
+    out = "include/glib/" + hdr,
+    substitutions = {},
+    template = hdr,
+) for (ii, hdr) in enumerate(PUBLIC_HDRS)]
+
+expand_template(
+    name = "cp_glib_h",
+    out = "include/glib.h",
+    substitutions = {},
+    template = "glib.h",
+)
+
+cc_library(
+    name = "glib",
+    srcs = GLIB_SRCS + select({
+        "@platforms//os:macos": GLIB_POSIX_SRCS + GLIB_MACOS_SRCS,
+        "@platforms//os:windows": GLIB_WIN32_SRCS,
+        "//conditions:default": GLIB_POSIX_SRCS,
+    }),
+    hdrs = [":cp_glib_h"] + [
+        ":cp_public_hdr_%d" % (ii,)
+        for (ii, _hdr) in enumerate(PUBLIC_HDRS)
+    ],
+    implementation_deps = [
+        ":glib_hdrs_iquote",
+        ":glib_internal_textual_hdrs",
+        "//:config_h",
+    ],
+    includes = ["include"],
+    linkstatic = True,
+    local_defines = [
+        "_FILE_OFFSET_BITS=64",
+        "G_ENABLE_DEBUG",
+        "_GNU_SOURCE",
+        "G_LOG_DOMAIN='\"GLib\"'",
+        "GLIB_COMPILATION",
+        "GLIB_CHARSETALIAS_DIR='\"/usr/lib\"'",
+    ],
+    strip_include_prefix = "/glib",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":internal_hdrs_isystem",
+    ],
+)

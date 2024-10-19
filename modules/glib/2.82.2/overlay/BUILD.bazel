@@ -1,0 +1,75 @@
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+
+config_setting(
+    name = "macos-aarch64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "macos-x86_64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "linux-aarch64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "linux-riscv64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:riscv64",
+    ],
+)
+
+config_setting(
+    name = "linux-x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+[
+    V_MAJOR,
+    V_MINOR,
+    V_MICRO,
+] = module_version().split(".", 3)
+
+BINARY_AGE = 100 * int(V_MINOR) + int(V_MICRO)
+
+expand_template(
+    name = "gen_config_h",
+    out = "include/config.h",
+    substitutions = {
+        "{GLIB_BINARY_AGE}": str(BINARY_AGE),
+        "{GLIB_MAJOR_VERSION}": V_MAJOR,
+        "{GLIB_MINOR_VERSION}": V_MINOR,
+        "{GLIB_MICRO_VERSION}": V_MICRO,
+        "{GLIB_VERSION}": module_version(),
+    },
+    template = select({
+        ":macos-aarch64": "config.h-macos-64",
+        ":macos-x86_64": "config.h-macos-64",
+        ":linux-aarch64": "config.h-linux-64",
+        ":linux-riscv64": "config.h-linux-64",
+        ":linux-x86_64": "config.h-linux-64",
+    }),
+)
+
+cc_library(
+    name = "config_h",
+    hdrs = [":gen_config_h"],
+    strip_include_prefix = "/include",
+    visibility = ["//:__subpackages__"],
+)

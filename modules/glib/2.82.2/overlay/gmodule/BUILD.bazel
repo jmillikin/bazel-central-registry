@@ -1,0 +1,87 @@
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+
+expand_template(
+    name = "gmoduleconf_h",
+    out = "gmoduleconf.h",
+    substitutions = select({
+        "@platforms//os:windows": {
+            "@G_MODULE_IMPL@": "G_MODULE_IMPL_WIN32",
+            "@G_MODULE_HAVE_DLERROR@": "1",
+            "@G_MODULE_NEED_USCORE@": "0",
+            "@G_MODULE_BROKEN_RTLD_GLOBAL@": "0",
+        },
+        "//conditions:default": {
+            "@G_MODULE_IMPL@": "G_MODULE_IMPL_DL",
+            "@G_MODULE_HAVE_DLERROR@": "1",
+            "@G_MODULE_NEED_USCORE@": "0",
+            "@G_MODULE_BROKEN_RTLD_GLOBAL@": "0",
+        },
+    }),
+    template = "gmoduleconf.h.in",
+)
+
+run_binary(
+    name = "gmodule-visibility_h",
+    outs = ["gmodule-visibility.h"],
+    args = [
+        module_version(),
+        "visibility-macros",
+        "GMODULE",
+        "$(location gmodule-visibility.h)",
+    ],
+    tool = "//tools:gen-visibility-macros",
+)
+
+INTERNAL_HDRS = [
+    ":gmoduleconf_h",
+    ":gmodule-visibility_h",
+]
+
+[expand_template(
+    name = "cp_internal_hdr_%d" % (ii,),
+    out = "include/gmodule/" + hdr.strip(":").replace("_h", ".h"),
+    substitutions = {},
+    template = hdr,
+) for (ii, hdr) in enumerate(INTERNAL_HDRS)]
+
+cc_library(
+    name = "internal_hdrs_isystem",
+    hdrs = [
+        ":cp_internal_hdr_%d" % (ii,)
+        for (ii, _hdr) in enumerate(INTERNAL_HDRS)
+    ],
+    includes = ["include"],
+    strip_include_prefix = "/gmodule",
+)
+
+cc_library(
+    name = "internal_hdrs_iquote",
+    hdrs = INTERNAL_HDRS,
+    strip_include_prefix = "/gmodule",
+)
+
+cc_library(
+    name = "gmodule",
+    srcs = [
+        "gmodule.c",
+        "gmodule-deprecated.c",
+    ],
+    hdrs = ["gmodule.h"],
+    implementation_deps = [
+        ":internal_hdrs_iquote",
+        "//:config_h",
+    ],
+    linkstatic = True,
+    strip_include_prefix = "/gmodule",
+    textual_hdrs = [
+        "gmodule-ar.c",
+        "gmodule-dl.c",
+        "gmodule-win32.c",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":internal_hdrs_isystem",
+        "//glib",
+    ],
+)
