@@ -1,3 +1,5 @@
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+
 SKIP_BUILD_FAILURE = [
     # bazel_dep(name = "pcre2", version = "10.43") doesn't have JIT support
     "autoptr",
@@ -18,9 +20,6 @@ SKIP_TEST_FAILURE = [
 
     # requires LD_PRELOAD
     "gutils-user-database",
-
-    # asserts $G_TEST_SRCDIR is an absolute path
-    "gdatetime",
 ]
 
 TEST_HELPER_SRCS = [
@@ -40,6 +39,8 @@ TEST_SRCS = glob(
     ["*.c"],
     exclude = TEST_HELPER_SRCS,
 )
+
+TEST_NAMES = [src.replace(".c", "") for src in TEST_SRCS]
 
 [cc_binary(
     name = helper_name,
@@ -63,10 +64,15 @@ TEST_SRCS = glob(
 
 TEST_DATA = glob(
     ["**/*"],
-    exclude = ["BUILD.bazel"],
+    exclude = [
+        "**/*.c",
+        "**/*.h",
+        "BUILD.bazel",
+    ],
 )
 
-TEST_DATA_BINS = {
+TEST_DATA_EXTRA = {
+    "keyfile": ["keyfile.c"],
     "testing": [":testing-helper"],
     "spawn-multithreaded": [
         ":test-spawn-echo",
@@ -78,9 +84,6 @@ TEST_DATA_BINS = {
         ":spawn-path-search-helper",
         ":path-test-subdir/spawn-test-helper",
     ],
-}
-
-TEST_PLATFORMS = {
 }
 
 constraint_setting(
@@ -96,6 +99,8 @@ constraint_value(
     name = "skip_test_failure",
     constraint_setting = ":skip_reason",
 )
+
+TEST_PLATFORMS = {}
 
 TEST_PLATFORMS.update([
     (
@@ -113,38 +118,38 @@ TEST_PLATFORMS.update([
     for test_name in SKIP_TEST_FAILURE
 ])
 
-GLIB_TESTS = [{
-    "name": test_src.replace(".c", ""),
-    "srcs": [test_src],
-    "platform": TEST_PLATFORMS.get(
-        test_src.replace(".c", ""),
-        [],
-    ),
-} for test_src in TEST_SRCS]
-
 REPO = repo_name()
 
 G_TEST_SRCDIR = "../%s/glib/tests" % (REPO,) if REPO else "glib/tests"
 
-[cc_test(
-    name = test["name"],
-    size = "small",
-    srcs = test["srcs"] + ["testutils.h"],
-    data = TEST_DATA + TEST_DATA_BINS.get(
-        test["name"],
-        [],
+DEFAULT_TEST_ENV = {
+    "G_TEST_SRCDIR": G_TEST_SRCDIR,
+}
+
+TEST_ENV = {
+    "gdatetime": dicts.add(
+        DEFAULT_TEST_ENV,
+        {
+            # skip tests that expect to run from installed /usr prefix
+            "G_TEST_BUILDDIR": "dummy",
+        },
     ),
-    env = {
-        "G_TEST_SRCDIR": G_TEST_SRCDIR,
-    },
+}
+
+[cc_test(
+    name = test_name,
+    size = "small",
+    srcs = [test_name + ".c"] + ["testutils.h"],
+    data = TEST_DATA + TEST_DATA_EXTRA.get(test_name, []),
+    env = TEST_ENV.get(test_name, DEFAULT_TEST_ENV),
     local_defines = [
         "_GNU_SOURCE",
         "G_LOG_DOMAIN='\"GLib\"'",
     ],
-    target_compatible_with = test["platform"],
+    target_compatible_with = TEST_PLATFORMS.get(test_name, []),
     deps = [
         "//:config_h",
         "//glib",
         "//glib:glib_hdrs_iquote",
     ],
-) for test in GLIB_TESTS]
+) for test_name in TEST_NAMES]

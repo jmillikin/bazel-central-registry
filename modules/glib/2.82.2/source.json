@@ -3,18 +3,20 @@
     "integrity": "sha256-q0X1oyMEixZZ7g+9pc7NlLCZqz5Lmr8mrgaus+eB/WM=",
     "strip_prefix": "glib-2.82.2",
     "overlay": {
-        "BUILD.bazel": "sha256-PjnSMskIRUje7ubWvu3ie1XiZs+k1pttoOb7gPOJdRs=",
+        "BUILD.bazel": "sha256-QTtKF+BnBMfzXgnkQN1pMa99/KOyrnxjVP90H7OzSLY=",
         "MODULE.bazel": "sha256-CIDv1xR789iFV4krBKLporgWWf9q1vm3gA0Z60kq1So=",
-        "config.h-linux-64": "sha256-OYjcb/Nb0VxCxGdp3Cj4wJSSY43CJj18EDKwdblPBIw=",
-        "config.h-macos-64": "sha256-/HwVN8q32I3Ow8Ni6LUp8WfrQ3koY23n5y+5j7JedXM=",
-        "glib/BUILD.bazel": "sha256-OXjCucRd0Q9LorHzcPRlQnjT5oBaYZfMpu7e2YTp0Zs=",
-        "glib/glibconfig.h.in-posix": "sha256-qCbq7m04BL0CAMkg/sVqqxfBCZXa+FrCnmuV3h2ofLA=",
-        "glib/tests/BUILD.bazel": "sha256-5bXLS2dA/S5T8kjy1Gq9JKHt8w7ES3NeG5y82gRG3uk=",
+        "config.h-linux": "sha256-Y7v22t5C/k1Ur9idgvI8wS4zzhFMpayGeTGr97gJ/PI=",
+        "config.h-macos": "sha256-8Z+GIDd40sGYJvuQoGZG8OUFVGXbGRjOnOWVfC7df+A=",
+        "glib/BUILD.bazel": "sha256-adPEMWyOqTCifgpj57PNlwE/qtwJkAqa698yW/8Ar3Q=",
+        "glib/glibconfig.h.in-posix": "sha256-7p3GwTRBI8JYr4sitZcW1WYxu5iHGzbJtmfQq5o2++M=",
+        "glib/stub_libintl/libintl.h": "sha256-PM2cAOL/zslqWpFdHUDyhWGIfCaplAanHYJ3Zuj8HB8=",
+        "glib/tests/BUILD.bazel": "sha256-trQpEIkgoryKO1nomCaZYzjKdFRNz+YKJkeo024xdgM=",
         "gmodule/BUILD.bazel": "sha256-O7zwZ1alvDTtW5VgoWZDGSxw3rbu150Mka8M4ObQNT0=",
         "tools/BUILD.bazel": "sha256-wDk/cM/v+egNb7PYvKByjxIp8XB37aSUSyRb2HiMovI="
     },
     "patch_strip": 0,
     "patches": {
-        "gmodule_include_path.patch": "sha256-V6KwsNpPv2fGPS2VK1SAkrhHqdhu5tdOHJoYBHrkHRA="
+        "gmodule_include_path.patch": "sha256-V6KwsNpPv2fGPS2VK1SAkrhHqdhu5tdOHJoYBHrkHRA=",
+        "test_portability.patch": "sha256-k+rcpufDHmQHEgKLJ1KW9b5JqItxVU0i05Xb1XwHHfM="
     }
 }

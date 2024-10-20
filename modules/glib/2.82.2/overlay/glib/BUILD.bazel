@@ -91,21 +91,27 @@ cc_library(
 )
 
 cc_library(
+    name = "stub_intl",
+    hdrs = ["stub_libintl/libintl.h"],
+    strip_include_prefix = "/glib/stub_libintl",
+    visibility = [":__subpackages__"],
+)
+
+cc_library(
     name = "glib_hdrs_iquote",
     hdrs = INTERNAL_HDRS + PUBLIC_HDRS,
     strip_include_prefix = "/glib",
     visibility = ["//glib/tests:__pkg__"],
-    deps = [":glibconfig_lib"],
+    deps = [":glibconfig_lib"] + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": [":stub_intl"],
+    }),
 )
 
 GLIB_POSIX_SRCS = [
     "gspawn-posix.c",
     "glib-unix.c",
     "giounix.c",
-]
-
-GLIB_MACOS_SRCS = [
-    "gosxutils.m",
 ]
 
 GLIB_WIN32_SRCS = [
@@ -132,7 +138,6 @@ GLIB_SRCS = glob(
     ],
     exclude = (
         GLIB_POSIX_SRCS +
-        GLIB_MACOS_SRCS +
         GLIB_WIN32_SRCS +
         GLIB_INTERNAL_TEXTUAL_HDRS
     ) + [
@@ -163,7 +168,6 @@ expand_template(
 cc_library(
     name = "glib",
     srcs = GLIB_SRCS + select({
-        "@platforms//os:macos": GLIB_POSIX_SRCS + GLIB_MACOS_SRCS,
         "@platforms//os:windows": GLIB_WIN32_SRCS,
         "//conditions:default": GLIB_POSIX_SRCS,
     }),
@@ -175,8 +179,18 @@ cc_library(
         ":glib_hdrs_iquote",
         ":glib_internal_textual_hdrs",
         "//:config_h",
-    ],
+    ] + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": [":stub_intl"],
+    }),
     includes = ["include"],
+    linkopts = ["-liconv"] + select({
+        "@platforms//os:macos": [
+            "-framework",
+            "Carbon",
+        ],
+        "//conditions:default": [],
+    }),
     linkstatic = True,
     local_defines = [
         "_FILE_OFFSET_BITS=64",

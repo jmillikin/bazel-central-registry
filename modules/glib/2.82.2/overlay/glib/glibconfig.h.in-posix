@@ -1,7 +1,4 @@
-/* glibconfig.h
- *
- * This is a generated file.  Please modify 'glibconfig.h.in'
- */
+/* Derived from 'glibconfig.h.in' */
 
 #ifndef __GLIBCONFIG_H__
 #define __GLIBCONFIG_H__
@@ -14,7 +11,6 @@
 #include <float.h>
 #include <inttypes.h>
 #include <stdint.h>
-#include <endian.h>
 #include <sys/socket.h>
 #define GLIB_HAVE_ALLOCA_H
 
@@ -77,58 +73,38 @@ typedef uint64_t guint64;
 
 #if defined(__PRI64_PREFIX) /* GNU libc */
 #  define G_GINT64_MODIFIER __PRI64_PREFIX
-#elif defined(__PRI64) /* musl libc, BSD libc */
+#elif defined(__PRI64) /* musl libc, FreeBSD */
 #  define G_GINT64_MODIFIER __PRI64
+#elif defined(__PRI_64_LENGTH_MODIFIER__) /* macOS */
+#  define G_GINT64_MODIFIER __PRI_64_LENGTH_MODIFIER__
 #else
 #  define G_GINT64_MODIFIER "ll"
 #endif
 #define G_GINT64_FORMAT PRIi64
 #define G_GUINT64_FORMAT PRIu64
 
-#if UINTPTR_MAX == UINT64_MAX
-#  define GLIB_SIZEOF_VOID_P  8
-#elif UINTPTR_MAX == UINT32_MAX
-#  define GLIB_SIZEOF_VOID_P  4
-#else
-#  error "UINTPTR_MAX not in {UINT64_MAX, UINT32_MAX}"
-#endif
 
-#if ULONG_MAX == UINT64_MAX
-#define GLIB_SIZEOF_LONG   8
-#elif ULONG_MAX == UINT32_MAX
-#define GLIB_SIZEOF_LONG   4
-#else
-#  error "ULONG_MAX not in {UINT64_MAX, UINT32_MAX}"
-#endif
-
-#if SIZE_MAX == UINT64_MAX
-#define GLIB_SIZEOF_SIZE_T 8
-#define GLIB_SIZEOF_SSIZE_T 8
-#elif SIZE_MAX == UINT32_MAX
-#define GLIB_SIZEOF_SIZE_T 4
-#define GLIB_SIZEOF_SSIZE_T 4
-#else
-#  error "SIZE_MAX not in {UINT64_MAX, UINT32_MAX}"
-#endif
+#define GLIB_SIZEOF_VOID_P  __SIZEOF_POINTER__
+#define GLIB_SIZEOF_LONG   __SIZEOF_LONG__
+#define GLIB_SIZEOF_SIZE_T __SIZEOF_SIZE_T__
+#define GLIB_SIZEOF_SSIZE_T __SIZEOF_SIZE_T__
 
 typedef size_t gsize;
 typedef ssize_t gssize;
-#if SIZE_MAX == UINT64_MAX
-#  define G_GSIZE_MODIFIER G_GINT64_MODIFIER
-#  define G_GSSIZE_MODIFIER G_GINT64_MODIFIER
-#  define G_GSIZE_FORMAT G_GUINT64_FORMAT
-#  define G_GSSIZE_FORMAT G_GINT64_FORMAT
-#  define G_MAXSIZE UINT64_MAX
+#define G_GSIZE_MODIFIER "z"
+#define G_GSSIZE_MODIFIER "z"
+#define G_GSIZE_FORMAT "zu"
+#define G_GSSIZE_FORMAT "zd"
+
+#define G_MAXSIZE SIZE_MAX
+#define G_MAXSSIZE SSIZE_MAX
+
+#if SSIZE_MAX == INT64_MAX
 #  define G_MINSSIZE INT64_MIN
-#  define G_MAXSSIZE INT64_MAX
-#elif SIZE_MAX == UINT32_MAX
-#  define G_GSIZE_MODIFIER G_GINT32_MODIFIER
-#  define G_GSSIZE_MODIFIER G_GINT32_MODIFIER
-#  define G_GSIZE_FORMAT G_GUINT32_FORMAT
-#  define G_GSSIZE_FORMAT G_GINT32_FORMAT
-#  define G_MAXSIZE UINT32_MAX
+#elif SSIZE_MAX == INT32_MAX
 #  define G_MINSSIZE INT32_MIN
-#  define G_MAXSSIZE INT32_MAX
+#else
+#  error "SSIZE_MAX not in {INT64_MAX, INT32_MAX}"
 #endif
 
 typedef gint64 goffset;
@@ -199,7 +175,7 @@ typedef uintptr_t guintptr;
 
 #define G_ATOMIC_LOCK_FREE
 
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
 #define G_BYTE_ORDER G_LITTLE_ENDIAN
 
@@ -249,6 +225,8 @@ typedef uintptr_t guintptr;
 #  define GULONG_TO_LE(val) ((gulong) GUINT32_TO_LE (val))
 #  define GLONG_TO_BE(val)  ((glong) GINT32_TO_BE (val))
 #  define GULONG_TO_BE(val) ((gulong) GUINT32_TO_BE (val))
+#else
+#  error "ULONG_MAX not in {UINT64_MAX, UINT32_MAX}"
 #endif
 
 #if UINT_MAX == UINT64_MAX
@@ -275,6 +253,8 @@ typedef uintptr_t guintptr;
 #  define GSSIZE_TO_LE(val) ((gssize) GINT32_TO_LE (val))
 #  define GSIZE_TO_BE(val)  ((gsize) GUINT32_TO_BE (val))
 #  define GSSIZE_TO_BE(val) ((gssize) GINT32_TO_BE (val))
+#else
+#  error "SIZE_MAX not in {UINT64_MAX, UINT32_MAX}"
 #endif
 
 #define GLIB_SYSDEF_POLLIN =1
